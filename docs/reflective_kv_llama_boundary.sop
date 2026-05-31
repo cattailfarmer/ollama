@@ -1,0 +1,78 @@
+Subject: Reflective KV Llama Boundary
+Description: P6 documented boundary for Ollama and llama-server reflective KV integration.
+
+& [ReflectiveKVLlamaBoundary] is a documented blocked-boundary repository slice
+  + [boundary_status] is blocked_pending_new_llama_cpp_or_llama_server_hook
+  + [slice_scope] is documentation only
+  + [runtime_integration_status] is not implemented
+  + [policy_dependency] is P5 remains the authoritative default-off runtime policy gate
+  + [safe_current_surface] is request, launch, cache_prompt, context-shift, runner lifecycle, and compatibility-patch observation
+  + [unsafe_current_surface] is raw KV tensor mutation, direct attention-state mutation, or decode-time cache surgery through existing llama-server completion requests
+  + [blocked_reason] is current cited Ollama and llama-server surfaces do not expose a safe raw KV or attention mutation hook
+
+  + [go_kvcache_surface] is an in-process Go cache abstraction, not proof of llama-server runtime reachability
+    @ [source] C:\Project\Ollama\kvcache\cache.go:15 defines the Cache interface
+    @ [source] C:\Project\Ollama\kvcache\cache.go:19 exposes SetLayer
+    @ [source] C:\Project\Ollama\kvcache\cache.go:25 exposes Get(ctx ml.Context)
+    @ [source] C:\Project\Ollama\kvcache\cache.go:31 exposes Put(ctx ml.Context, key, value ml.Tensor)
+    @ [source] C:\Project\Ollama\kvcache\cache.go:61 exposes StartForward(ctx, batch, reserve)
+    @ [source] C:\Project\Ollama\kvcache\cache.go:64 exposes CopyPrefix
+    @ [source] C:\Project\Ollama\kvcache\cache.go:69 exposes CanResume
+    @ [source] C:\Project\Ollama\kvcache\cache.go:76 exposes Remove
+    + [boundary_read] is useful for vocabulary and future test fixtures, but does not establish that live llama-server raw KV can be mutated from Go
+
+  + [llm_server_interface_surface] is the Go request boundary over runner backends
+    @ [source] C:\Project\Ollama\llm\server.go:59 defines LlamaServer
+    @ [source] C:\Project\Ollama\llm\server.go:64 includes Completion
+    @ [source] C:\Project\Ollama\llm\server.go:77 includes ContextLength
+    @ [source] C:\Project\Ollama\llm\server.go:206 defines CompletionRequest
+    @ [source] C:\Project\Ollama\llm\server.go:215 carries PreservedTokens and notes non-llama-server runners ignore it
+    + [boundary_read] is safe for request gating and unsupported-runner no-op decisions, but it does not expose raw KV tensors or attention state
+
+  + [llama_server_launch_surface] is the launch and HTTP completion boundary
+    @ [source] C:\Project\Ollama\llm\llama_server.go:163 stores kvCacheType
+    @ [source] C:\Project\Ollama\llm\llama_server.go:361 appends --cache-type-k and --cache-type-v
+    @ [source] C:\Project\Ollama\llm\llama_server.go:651 appends --context-shift
+    @ [source] C:\Project\Ollama\llm\llama_server.go:1114 defines llamaServerCompletionRequest
+    @ [source] C:\Project\Ollama\llm\llama_server.go:1117 maps CachePrompt to json cache_prompt
+    @ [source] C:\Project\Ollama\llm\llama_server.go:1280 sets CachePrompt from req.Shift
+    @ [source] C:\Project\Ollama\llm\llama_server.go:1863 sends cache_prompt from req.Shift on an alternate request path
+    @ [source] C:\Project\Ollama\llm\llama_server.go:2354 reads KV head count for memory estimation
+    @ [source] C:\Project\Ollama\llm\llama_server.go:2362 estimates KV cache memory
+    + [boundary_read] is appropriate for launch/request observation and cache_prompt/context-shift gating
+    + [blocked_read] is cache_prompt requests prompt-cache reuse behavior, not arbitrary raw KV or attention mutation
+
+  + [scheduler_surface] is runner lifecycle, reuse, context-shift, and load ownership
+    @ [source] C:\Project\Ollama\server\sched.go:137 defines resolveContextShift
+    @ [source] C:\Project\Ollama\server\sched.go:187 reuses a loaded runner when needsReload is false
+    @ [source] C:\Project\Ollama\server\sched.go:561 sets config.ContextShift
+    @ [source] C:\Project\Ollama\server\sched.go:562 constructs the LlamaServer
+    @ [source] C:\Project\Ollama\server\sched.go:616 calls llama.Load
+    @ [source] C:\Project\Ollama\server\sched.go:1337 evaluates needsReload
+    + [boundary_read] is where a future trace-only or request-local P6 mode would need to avoid stale runner state
+    + [blocked_read] is runner reuse and load control do not supply decode-time raw KV or attention mutation
+
+  + [api_route_surface] is request-to-runner conversion and prompt preservation
+    @ [source] C:\Project\Ollama\server\routes.go:205 defines scheduleRunner
+    @ [source] C:\Project\Ollama\server\routes.go:624 starts a CompletionRequest in generate flow
+    @ [source] C:\Project\Ollama\server\routes.go:633 passes PreservedTokens
+    @ [source] C:\Project\Ollama\server\routes.go:2296 defines preservedTokensForCompletion
+    @ [source] C:\Project\Ollama\server\routes.go:2323 clamps NumCtx to runner ContextLength
+    @ [source] C:\Project\Ollama\server\routes.go:2756 sends a CompletionRequest in chat flow
+    + [boundary_read] is useful for request/session citation, but route code should not own raw KV mutation
+
+  + [llama_compat_surface] is the existing upstream patch isolation pattern
+    @ [source] C:\Project\Ollama\llama\compat\README.md:1 names the llama.cpp compatibility layer
+    @ [source] C:\Project\Ollama\llama\compat\README.md:16 states OLLAMA_LLAMA_CPP_SOURCE affects patch application
+    @ [source] C:\Project\Ollama\llama\compat\README.md:36 lists loader hook points
+    @ [source] C:\Project\Ollama\llama\compat\README.md:56 documents OLLAMA_LLAMA_CPP_COMPAT=0
+    + [boundary_read] is the strongest current pattern for an isolated upstream patch, but the cited hook family is loader/model compatibility rather than runtime KV or attention mutation
+
+  = must: keep P6 disabled unless P5 explicitly authorizes an active mode
+  = must: treat request, launch, cache_prompt, context-shift, and scheduler controls as gates or trace surfaces only
+  = must: require a new cited llama.cpp or llama-server hook before raw KV or attention mutation is attempted
+  = must: keep any future llama.cpp change in a compat-style isolated patch with disable and rollback behavior
+  = must: keep non-llama runners no-op or unsupported unless a later slice explicitly supports them
+  = must: avoid launch-argument, request-field, runner-reload, memory-estimation, or compat-patch changes in this slice
+  - never: approximate raw KV mutation through cache_prompt, context-shift, PreservedTokens, or Go-side route policy alone
+  - never: claim runtime compatibility, memory behavior, latency behavior, or quality behavior without a buildable implementation and proof
