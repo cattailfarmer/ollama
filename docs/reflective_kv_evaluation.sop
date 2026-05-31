@@ -1,0 +1,21 @@
+Subject: Reflective KV Evaluation Harness
+Description: Phase2-Q1 fixture harness for non-claiming reflective KV sidecar evaluation.
+
+& [ReflectiveKVEvaluationHarness] is a non-claiming fixture evaluation layer
+  + [slice_scope] is sidecar-only evaluation fixtures
+  + [claim_status] is explicit no_claim on every EvaluationRecord
+  + [task_case] contains source document, expected anchors, rehydration expectations, current position, and runtime policy mode
+  + [expected_anchor] matches P2-produced anchor, layer, and optional role
+  + [policy_check] uses P5 off, trace_only, or simulate_only behavior without runtime mutation
+  + [rehydration_check] uses P4 context-pack materialization to verify expected fixture text
+  + [score_record] records pass/fail counts for anchors, policy traces, rehydration, and no_claim status
+  + [unsupported_mode] is guarded_apply, because the evaluation harness must not write through runtime state hooks
+
+  = must: use fixtures as observations only
+  = must: keep records explicitly marked no_claim
+  = must: avoid performance, memory, latency, or quality claims
+  = must: use P2 annotations for expected anchors
+  = must: use P3/P5 policy decisions for trace and simulate checks
+  = must: use P4 rehydration for context-pack evidence
+  = must: leave runtime, llama, server, runner, existing kvcache files, and existing docs untouched
+  - never: treat fixture pass/fail as proof of production quality, cache reduction, speed, memory, or model behavior
