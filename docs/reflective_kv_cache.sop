@@ -1,0 +1,33 @@
+Subject: Reflective KV Cache
+Description: Fork-local architecture note for making KV cache address typed semantic and transformer-structural references, not only raw token-derived key/value tensors.
+
+& [ReflectiveKVCache] is the proposed extension of Ollama's cache model
+  + [source_specification] is C:\Project\ReasoningFramework\platform\source_documents\2026-05-31_ollama_reflective_kv_cache\Canonical_Reflective_KV_Cache_Specification.sop
+  + [implementation_package] is kvcache
+  + [first_slice] is typed reference records and validation only
+
+  + [reference_layer] is one of surface, subtext, contract, structural, or reflective
+    + [surface] is literal token-span context
+    + [subtext] is typed interpretive state such as tone, implication, ambiguity, or authority tension
+    + [contract] is durable rule or obligation identity such as an SOP contract
+    + [structural] is subject, file, dependency, provenance, or runtime structure identity
+    + [reflective] is transformer-internal parameter or activation address identity
+
+  + [parameter_address] is a stable runtime address into a transformer tensor
+    + [layer] is the transformer layer index
+    + [module] is the owning runtime module or projection name
+    + [tensor] is the tensor name
+    + [offset] is the flattened tensor start index
+    + [size] is the number of addressed scalar values
+
+  + [activation_address] is a stable runtime address into layer/head/channel activation state
+    + [layer] is the transformer layer index
+    + [head] is the attention head index
+    + [begin] is the first addressed channel
+    + [end] is the exclusive addressed channel bound
+
+  = must: keep current inference behavior unchanged in the first slice
+  = must: validate references before any future runtime resolver consumes them
+  = must: produce stable keys so typed references can later be joined, indexed, or compared
+  = must: preserve exact source text outside this cache layer when exact recall matters
+  - never: claim KV-cache reduction or accuracy preservation until benchmarked
