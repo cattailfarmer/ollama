@@ -54,11 +54,20 @@ Description: Fork-local architecture note for making KV cache address typed sema
   + [reference_store] is a non-invasive index of validated references by stable key
   + [reference_resolver] is the interface that maps a reference and operation into an inspectable result
     + [operation] is inspect, retrieve, pin, evict, rehydrate, gate, or annotate
+  + [reference_producer] is a non-invasive annotation producer that emits references from source documents
+    + [source_document] is path, digest, optional section, and exact source text
+    + [reference_annotation] is a reference plus current or stale annotation status
+    + [sop_reference_producer] emits surface references for non-empty source lines
+    + [sop_reference_producer] emits structural references for subject, field, enum, source, and composition declarations
+    + [sop_reference_producer] emits contract references for directive and constraint lines
+    + [sop_reference_producer] emits subtext references for question and assumption lines
 
   = must: keep current inference behavior unchanged in the first slice
   = must: validate references before any future runtime resolver consumes them
   = must: produce stable keys so typed references can later be joined, indexed, or compared
   = must: include address_space for reflective parameter, activation, and cache-cell references
   = must: escape reserved stable-key delimiters inside user or source supplied values
+  = must: preserve source provenance on generated annotations
+  = must: let annotations be marked stale without mutating their original reference keys
   = must: preserve exact source text outside this cache layer when exact recall matters
   - never: claim KV-cache reduction or accuracy preservation until benchmarked
