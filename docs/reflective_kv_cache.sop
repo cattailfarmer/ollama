@@ -26,8 +26,39 @@ Description: Fork-local architecture note for making KV cache address typed sema
     + [begin] is the first addressed channel
     + [end] is the exclusive addressed channel bound
 
+  + [model_fingerprint] is the model-local identity needed before reflective addresses can be compared
+    + [architecture] is the architecture family declared by model metadata
+    + [family] is the model family or variant when available
+    + [tokenizer] is the tokenizer identity when available
+    + [digest] is a model or artifact digest when available
+
+  + [address_space] is the model-scoped namespace for reflective addresses
+    + [name] is the runtime or adapter namespace, such as llama.cpp
+    + [version] is the address encoding version
+    + [model_fingerprint] is the model-local identity carried by the namespace
+
+  + [cache_cell_address] is a stable address into cache storage metadata
+    + [cache] is the cache implementation name
+    + [layer] is the active layer
+    + [sequence] is the sequence id
+    + [position] is the token position
+    + [cell] is the cache cell index
+
+  + [source_address] is a rehydration handle for exact source text outside active KV state
+    + [path] is a source file path
+    + [digest] is a content or artifact digest
+    + [section] is an optional source-local section anchor
+    + [line_range] is an optional exact line range
+    + [byte_range] is an optional exact byte range
+
+  + [reference_store] is a non-invasive index of validated references by stable key
+  + [reference_resolver] is the interface that maps a reference and operation into an inspectable result
+    + [operation] is inspect, retrieve, pin, evict, rehydrate, gate, or annotate
+
   = must: keep current inference behavior unchanged in the first slice
   = must: validate references before any future runtime resolver consumes them
   = must: produce stable keys so typed references can later be joined, indexed, or compared
+  = must: include address_space for reflective parameter, activation, and cache-cell references
+  = must: escape reserved stable-key delimiters inside user or source supplied values
   = must: preserve exact source text outside this cache layer when exact recall matters
   - never: claim KV-cache reduction or accuracy preservation until benchmarked
