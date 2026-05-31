@@ -1,0 +1,16 @@
+Subject: Reflective KV Rehydration
+Description: P4 design note for exact source recovery and context-pack materialization from typed references.
+
+& [ReflectiveKVRehydration] is the P4 non-invasive rehydration layer
+  + [source_store] is an exact source repository addressable by SourceAddress path or digest
+  + [source_digest] is sha256-prefixed source text validation
+  + [rehydrator] maps rehydratable RetentionDecision records back to exact source text
+  + [context_pack] is ordered source text materialized from rehydratable decisions
+  + [rehydration_trace] records stable key, source address, and retention action used for each pack item
+
+  = must: preserve exact source text for line and byte ranges
+  = must: validate sha256 source digests when present
+  = must: materialize context packs deterministically from retention decision order
+  = must: skip non-rehydratable decisions during context-pack materialization
+  = must: keep runtime inference behavior unchanged
+  - never: claim cache reduction, quality preservation, or live runtime policy integration from this slice
