@@ -1,0 +1,21 @@
+Subject: Reflective KV Runtime Policy
+Description: P5 design note for guarded runtime policy evaluation around reflective KV references.
+
+& [ReflectiveKVRuntimePolicy] is the P5 bounded runtime policy boundary
+  + [policy_default] is off
+  + [policy_modes] are off, trace_only, simulate_only, guarded_apply
+  + [disabled_path] returns without retention simulation, trace emission, context-pack materialization, or runtime-state mutation
+  + [trace_only_mode] records candidate retention decisions without resolving, rehydrating, or mutating runtime state
+  + [simulate_only_mode] runs retention simulation and source rehydration evidence without mutating runtime state
+  + [guarded_apply_mode] may write only through an explicit RuntimePolicyState hook after policy gates pass
+  + [decision_trace] records mode, stable key, lifecycle, candidate action, final action, reason, fallback, resolution, rehydration, and mutation state
+  + [fallback_behavior] maps failed reference resolution, failed source rehydration, or unavailable runtime state to preserve raw behavior
+  + [rollback_proof] is disabled-mode no-op plus trace_only and simulate_only no-mutation tests plus guarded failure fallback tests
+
+  = must: keep the default feature state off
+  = must: preserve existing runtime behavior when the mode is off
+  = must: avoid runtime-state mutation in trace_only and simulate_only modes
+  = must: fall back to RetentionActionRetainRawKV when resolution or rehydration fails
+  = must: emit inspectable decision traces for active modes
+  = must: require rendezvous before touching real Ollama runtime or session files
+  - never: claim cache reduction, memory reduction, latency improvement, or quality preservation from this policy boundary alone
